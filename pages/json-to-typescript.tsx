@@ -4,6 +4,7 @@ import Form, { InputType } from "@components/Form";
 import { useSettings } from "@hooks/useSettings";
 import * as React from "react";
 import { useCallback } from "react";
+import { Writable } from "stream";
 
 interface Settings {
   typealias: boolean;
@@ -17,6 +18,24 @@ const formFields = [
   }
 ];
 
+class StringWriter extends Writable {
+  _data: string;
+
+  constructor(options: any) {
+    super(options);
+    this._data = '';
+  }
+
+  _write(chunk, _encoding, callback) {
+    this._data += chunk;
+    callback();
+  }
+
+  getData() {
+    return this._data;
+  }
+}
+
 export default function JsonToTypescript() {
   const name = "JSON to Typescript";
 
@@ -26,16 +45,14 @@ export default function JsonToTypescript() {
 
   const transformer = useCallback(
     async ({ value }) => {
-      const { run } = await import("json_typegen_wasm");
-      return run(
-        "Root",
-        value,
-        JSON.stringify({
-          output_mode: settings.typealias
-            ? "typescript/typealias"
-            : "typescript"
-        })
-      );
+      const mt = await import("maketypes")
+      const w = new StringWriter({})
+      const emitter = new mt.Emitter( new mt.StreamWriter(w), new mt.NopWriter() );
+
+      emitter.emit(JSON.parse(value), "RootObject")
+
+      return w.getData()
+
     },
     [settings]
   );
