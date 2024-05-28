@@ -77,12 +77,10 @@ export default function JsonToZod() {
 
       const tsInterface = w.getData()
 
-      // then convert the interface to zod schema
+      // then convert the interface to zod schema. We do this in two steps because
+      // the libraries that convert directly from JSON to Zod are not as mature
       const {formattedSchema} =  tsToZod(tsInterface)
-      // return formattedSchema
-
-      const { jsonToZod } = await import("json-to-zod");
-      return jsonToZod(JSON.parse(value), settings.rootName, true);
+      return formattedSchema
     },
     [settings]
   );
